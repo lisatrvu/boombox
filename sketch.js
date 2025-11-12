@@ -24,16 +24,34 @@ function setup() {
 
 function initAudio() {
   userStartAudio().then(() => {
+    // Try to use microphone first
     mic = new p5.AudioIn();
     mic.start();
-    fft = new p5.FFT(0.8, 64);
-    fft.setInput(mic);
+    
+    // Also try to get system audio (works better on iOS with speaker output)
+    let mediaStreamConstraints = { audio: true };
+    
+    navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
+      .then((stream) => {
+        let audioContext = getAudioContext();
+        let source = audioContext.createMediaStreamAudioSource(stream);
+        fft = new p5.FFT(0.8, 64);
+        fft.setInput(source);
+        console.log("Audio source connected!");
+      })
+      .catch((error) => {
+        console.error("System audio access failed:", error);
+        // Fallback to microphone input
+        fft = new p5.FFT(0.8, 64);
+        fft.setInput(mic);
+      });
+    
     started = true;
-    startButton.remove(); // hide the button
-    console.log("Audio started successfully!");
+    startButton.remove();
+    console.log("Audio initialized!");
   }).catch((error) => {
-    console.error("Audio start failed:", error);
-    alert("Microphone access denied. Please allow microphone access in your browser settings.");
+    console.error("Audio initialization failed:", error);
+    alert("Microphone access needed. Make sure you allowed microphone access and try again.");
   });
 }
 
