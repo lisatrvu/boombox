@@ -2,8 +2,17 @@ let fft;
 let rings = [];
 let started = false;
 let fadeText = 255;
-let startButton, fileInput, audioPlayer;
+let startButton, songSelect, playButton;
+let audioPlayer;
 let audioContext;
+let inSongSelection = true;
+
+// Array of demo songs - UPDATE THESE WITH YOUR SONG URLS
+const songs = [
+  { name: '🎵 Song 1', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+  { name: '🎵 Song 2', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+  { name: '🎵 Song 3', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' }
+];
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -16,34 +25,36 @@ function setup() {
   audioPlayer.style('display', 'none');
   audioPlayer.elt.crossOrigin = 'anonymous';
 
-  // Create file input
-  fileInput = createFileInput(handleFile);
-  fileInput.style('font-size', '16px');
-  fileInput.style('padding', '10px');
-  fileInput.position(width / 2 - 120, height / 2 - 80);
+  // Create song selection dropdown
+  songSelect = createSelect();
+  songSelect.style('font-size', '16px');
+  songSelect.style('padding', '10px');
+  songSelect.style('width', '200px');
+  songSelect.position(width / 2 - 100, height / 2 - 80);
+  
+  songSelect.option('-- Select a Song --');
+  for (let song of songs) {
+    songSelect.option(song.name, song.url);
+  }
 
   // Create play button
-  startButton = createButton('▶ Play & Visualize');
-  startButton.style('font-size', '18px');
-  startButton.style('padding', '12px 24px');
-  startButton.style('border-radius', '12px');
-  startButton.style('border', 'none');
-  startButton.style('background', '#ff3366');
-  startButton.style('color', 'white');
-  startButton.style('cursor', 'pointer');
-  startButton.position(width / 2 - 80, height / 2 - 25);
-  startButton.mousePressed(startVisualization);
-}
-
-function handleFile(file) {
-  if (file.type === 'audio') {
-    audioPlayer.elt.src = file.data;
-  }
+  playButton = createButton('▶ Play & Visualize');
+  playButton.style('font-size', '18px');
+  playButton.style('padding', '12px 24px');
+  playButton.style('border-radius', '12px');
+  playButton.style('border', 'none');
+  playButton.style('background', '#ff3366');
+  playButton.style('color', 'white');
+  playButton.style('cursor', 'pointer');
+  playButton.position(width / 2 - 80, height / 2 - 25);
+  playButton.mousePressed(startVisualization);
 }
 
 function startVisualization() {
-  if (audioPlayer.elt.src === '') {
-    alert('Please upload an audio file first!');
+  let selectedSong = songSelect.value();
+
+  if (selectedSong === '-- Select a Song --' || selectedSong === '') {
+    alert('Please select a song first!');
     return;
   }
 
@@ -52,7 +63,11 @@ function startVisualization() {
     audioContext = getAudioContext();
   }
 
-  // Create audio source from the audio element
+  // Set the audio source
+  audioPlayer.elt.src = selectedSong;
+  audioPlayer.elt.crossOrigin = 'anonymous';
+
+  // Create FFT from audio element
   if (!audioPlayer.elt.mediaElementAudioSourceNode) {
     try {
       let source = audioContext.createMediaElementAudioSource(audioPlayer.elt);
@@ -60,13 +75,16 @@ function startVisualization() {
       fft.setInput(source);
     } catch (e) {
       console.error('Error connecting audio:', e);
+      return;
     }
   }
 
+  // Play the audio
   audioPlayer.play();
+  inSongSelection = false;
   started = true;
-  startButton.remove();
-  fileInput.remove();
+  songSelect.remove();
+  playButton.remove();
   fadeText = 255;
 }
 
@@ -87,10 +105,10 @@ function draw() {
   if (!started) {
     fill(255);
     textAlign(CENTER, CENTER);
-    textSize(24);
-    text('Upload an audio file to begin', width / 2, height / 2 - 120);
-    textSize(16);
-    text('(Works with MP3, WAV, OGG)', width / 2, height / 2 - 60);
+    textSize(32);
+    text('🎵 BOOMBOX', width / 2, height / 2 - 150);
+    textSize(18);
+    text('Select a song to visualize', width / 2, height / 2 - 120);
     return;
   }
 
