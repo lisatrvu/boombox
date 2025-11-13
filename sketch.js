@@ -63,25 +63,19 @@ function startVisualization() {
     return;
   }
 
-  // Initialize audio context if needed
-  if (!audioContext) {
-    audioContext = getAudioContext();
-  }
-
   // Set the audio source
   audioPlayer.elt.src = selectedSong;
   audioPlayer.elt.crossOrigin = 'anonymous';
 
-  // Create FFT from audio element
-  if (!audioPlayer.elt.mediaElementAudioSourceNode) {
-    try {
-      let source = audioContext.createMediaElementAudioSource(audioPlayer.elt);
-      fft = new p5.FFT(0.8, 64);
-      fft.setInput(source);
-    } catch (e) {
-      console.error('Error connecting audio:', e);
-      return;
-    }
+  // Create FFT directly from the audio element
+  try {
+    fft = new p5.FFT(0.8, 64);
+    fft.setInput(audioPlayer.elt);
+    console.log("FFT connected to audio element!");
+  } catch (e) {
+    console.error('Error connecting FFT:', e);
+    alert('Error: Could not connect audio. Try a different song.');
+    return;
   }
 
   // Play the audio
