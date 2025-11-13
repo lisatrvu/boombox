@@ -1,57 +1,83 @@
-let mic, fft;
+let fft;
 let rings = [];
 let started = false;
 let fadeText = 255;
-let startButton;
+let startButton, fileInput, audioPlayer;
+let audioContext;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSB, 360, 100, 100, 100);
   noFill();
 
-  // Create a button for iOS audio permissions
-  startButton = createButton('🔊 Tap to Start Audio');
-  startButton.style('font-size', '20px');
+  // Create audio player (hidden)
+  audioPlayer = createAudio();
+  audioPlayer.id('audioPlayer');
+  audioPlayer.style('display', 'none');
+  audioPlayer.elt.crossOrigin = 'anonymous';
+
+  // Create file input
+  fileInput = createFileInput(handleFile);
+  fileInput.style('font-size', '16px');
+  fileInput.style('padding', '10px');
+  fileInput.position(width / 2 - 120, height / 2 - 80);
+
+  // Create play button
+  startButton = createButton('▶ Play & Visualize');
+  startButton.style('font-size', '18px');
   startButton.style('padding', '12px 24px');
   startButton.style('border-radius', '12px');
   startButton.style('border', 'none');
   startButton.style('background', '#ff3366');
   startButton.style('color', 'white');
   startButton.style('cursor', 'pointer');
-  startButton.position(width / 2 - 100, height / 2 - 25);
-  startButton.mousePressed(initAudio);
+  startButton.position(width / 2 - 80, height / 2 - 25);
+  startButton.mousePressed(startVisualization);
+}
+
+function handleFile(file) {
+  if (file.type === 'audio') {
+    audioPlayer.elt.src = file.data;
+  }
+}
+
+function startVisualization() {
+  if (audioPlayer.elt.src === '') {
+    alert('Please upload an audio file first!');
+    return;
+  }
+
+  // Initialize audio context if needed
+  if (!audioContext) {
+    audioContext = getAudioContext();
+  }
+
+  // Create audio source from the audio element
+  if (!audioPlayer.elt.mediaElementAudioSourceNode) {
+    try {
+      let source = audioContext.createMediaElementAudioSource(audioPlayer.elt);
+      fft = new p5.FFT(0.8, 64);
+      fft.setInput(source);
+    } catch (e) {
+      console.error('Error connecting audio:', e);
+    }
+  }
+
+  audioPlayer.play();
+  started = true;
+  startButton.remove();
+  fileInput.remove();
+  fadeText = 255;
 }
 
 function initAudio() {
   userStartAudio().then(() => {
-    // Try to use microphone first
     mic = new p5.AudioIn();
     mic.start();
-    
-    // Also try to get system audio (works better on iOS with speaker output)
-    let mediaStreamConstraints = { audio: true };
-    
-    navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
-      .then((stream) => {
-        let audioContext = getAudioContext();
-        let source = audioContext.createMediaStreamAudioSource(stream);
-        fft = new p5.FFT(0.8, 64);
-        fft.setInput(source);
-        console.log("Audio source connected!");
-      })
-      .catch((error) => {
-        console.error("System audio access failed:", error);
-        // Fallback to microphone input
-        fft = new p5.FFT(0.8, 64);
-        fft.setInput(mic);
-      });
-    
+    fft = new p5.FFT(0.8, 64);
+    fft.setInput(mic);
     started = true;
-    startButton.remove();
-    console.log("Audio initialized!");
-  }).catch((error) => {
-    console.error("Audio initialization failed:", error);
-    alert("Microphone access needed. Make sure you allowed microphone access and try again.");
+    startButton.remove(); // hide the button
   });
 }
 
@@ -62,7 +88,9 @@ function draw() {
     fill(255);
     textAlign(CENTER, CENTER);
     textSize(24);
-    text('Allow mic access and tap the button above to start 🎶', width / 2, height / 2 + 50);
+    text('Upload an audio file to begin', width / 2, height / 2 - 120);
+    textSize(16);
+    text('(Works with MP3, WAV, OGG)', width / 2, height / 2 - 60);
     return;
   }
 
@@ -70,12 +98,19 @@ function draw() {
 
   let spectrum = fft.analyze();
   let bass = fft.getEnergy("bass");
-  let level = mic.getLevel();
+  let mid = fft.getEnergy("mid");
+  let treble = fft.getEnergy("treble");
+  let level = map(bass, 0, 255, 0, 1);
 
-  if (level > 0.02) {
-    let numRings = floor(map(level, 0.02, 0.3, 1, 3));
+  if (bass > 50) {
+    let numRings = floor(map(bass, 50, 255, 1, 4));
     for (let i = 0; i < numRings; i++) {
-      let ring = new LightRing(width / 2, height / 2, map(level, 0, 0.3, 50, 250), level * 300);
+      let ring = new LightRing(
+        width / 2,
+        height / 2,
+        map(bass, 50, 255, 50, 250),
+        map(bass, 50, 255, 100, 200)
+      );
       rings.push(ring);
     }
   }
@@ -92,14 +127,27 @@ function draw() {
   if (fadeText > 0) {
     fill(255, fadeText);
     textAlign(CENTER, CENTER);
-    textSize(20);
-    text('🎵 Speak or play music near your mic!', width / 2, height / 2 - 200);
+    textSize(16);
+    text('🎵 Enjoying the beats?', width / 2, height / 2 - 200);
     fadeText -= 2;
+  }
+
+  // Check if audio ended
+  if (audioPlayer.elt.ended) {
+    reset();
   }
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+}
+
+function reset() {
+  started = false;
+  rings = [];
+  audioPlayer.stop();
+  audioPlayer.elt.src = '';
+  location.reload(); // Reload to show upload screen again
 }
 
 // ---------------- Boombox Drawing ----------------
