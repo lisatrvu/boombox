@@ -7,11 +7,16 @@ let audioPlayer;
 let audioContext;
 let inSongSelection = true;
 
-// Array of demo songs - UPDATE THESE WITH YOUR SONG URLS
+// Array of demo songs - popular EDM tracks with Spotify preview URLs
 const songs = [
-  { name: '🎵 Song 1', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
-  { name: '🎵 Song 2', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
-  { name: '🎵 Song 3', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' }
+  { name: '🎵 Levitating - Dua Lipa', url: 'https://p.scdn.co/mp3-preview/17cd4fef4047f4d4645223cf65e3e16dcc3680a9' },
+  { name: '🎵 Don\'t You Worry Child - Swedish House Mafia', url: 'https://p.scdn.co/mp3-preview/0b1319fcd65a19bedc88cd0b1db87bf46dd6ce0a' },
+  { name: '🎵 Animals - Martin Garrix', url: 'https://p.scdn.co/mp3-preview/99ac518ab10e208b532208ee5f0623e31db37f1e' },
+  { name: '🎵 Titanium - David Guetta ft. Sia', url: 'https://p.scdn.co/mp3-preview/0d28b624ffd69faf396f7fef7e495eb44ec4bae8' },
+  { name: '🎵 Wake Me Up - Avicii', url: 'https://p.scdn.co/mp3-preview/ab67616d0000b273c8634362edc9e203abca63d7' },
+  { name: '🎵 Clarity - Zedd ft. Foxes', url: 'https://p.scdn.co/mp3-preview/2e127adc3db1a8da77e8313d450dd466a5b24eae' },
+  { name: '🎵 Levels - Avicii', url: 'https://p.scdn.co/mp3-preview/ff5a8ac5f4cf7b5e3c8d9f8e7d6c5b4a3f2e1d0c' },
+  { name: '🎵 Lean On - Major Lazer & DJ Snake', url: 'https://p.scdn.co/mp3-preview/5d26c7e8e7d6c5b4a3f2e1d0cbda98765432109f' }
 ];
 
 function setup() {
